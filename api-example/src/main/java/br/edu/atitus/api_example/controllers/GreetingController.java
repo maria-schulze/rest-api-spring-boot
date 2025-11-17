@@ -10,16 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/greeting")
 public class GreetingController {
-		
-	@GetMapping(value = {"", "/{namePath}"})
+
+	@GetMapping(value = {"","/{namePath}"})
 	public ResponseEntity<String> getGreeting(
-		@RequestParam(required = false) String name,
-		@PathVariable(required = false) String namePath){
-	String greeting = "Hello";
+			@RequestParam(required = false) String name,
+			@PathVariable(required = false) String namePath) {
+		String greeting = "Hello";
 		if (name == null) 
-			name = namePath != null ? namePath : "Word"; 
-			
-		return  ResponseEntity.ok(greeting + " " + name + "!");
-		
+			name = namePath != null ? namePath : "World";
+		return ResponseEntity.ok(greeting + " " + name + "!");
 	}
 }
