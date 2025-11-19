@@ -30,7 +30,9 @@ public class PointEntity {
 	private double longitude;
 	
 	@JoinColumn(name = "iduser")
-	@ManyToOne(fetch = FetchType.LAZY)
+	// MUDANÇA AQUI: De LAZY para EAGER
+	// Isso garante que o usuário venha junto com o ponto, evitando o erro 500
+	@ManyToOne(fetch = FetchType.EAGER) 
 	private UserEntity user;
 
 	public UUID getId() {
@@ -72,7 +74,4 @@ public class PointEntity {
 	public void setUser(UserEntity user) {
 		this.user = user;
 	}
-	
-	
-
 }
