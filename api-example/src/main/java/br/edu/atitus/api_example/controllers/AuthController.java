@@ -4,6 +4,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,6 @@ import br.edu.atitus.api_example.services.UserService;
 @RequestMapping("/auth")
 public class AuthController {
 	
-	//AuthController DEPENDE de um objeto UserService
 	private final UserService service;
 	private final AuthenticationConfiguration authConfig;
 	
@@ -32,23 +32,22 @@ public class AuthController {
 	}
 
 	@PostMapping("/signup")
-	public ResponseEntity<UserEntity> postSignup(
-			@RequestBody SignupDTO dto) throws Exception{
+	public ResponseEntity<UserEntity> postSignup(@RequestBody SignupDTO dto) throws Exception{
 		UserEntity user = new UserEntity();
 		BeanUtils.copyProperties(dto, user);
 		user.setType(TypeUser.Common);
-		
 		service.save(user);
-
 		return ResponseEntity.status(201).body(user);
 	}
 	
 	@PostMapping("/signin")
-	public ResponseEntity<String> postSignin(
-			@RequestBody SigninDTO dto) throws AuthenticationException, Exception{
-		authConfig.getAuthenticationManager().authenticate(
+	public ResponseEntity<UserEntity> postSignin(@RequestBody SigninDTO dto) throws AuthenticationException, Exception{
+		Authentication auth = authConfig.getAuthenticationManager().authenticate(
 				new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
-		return ResponseEntity.ok("JWT");
+		
+		UserEntity user = (UserEntity) auth.getPrincipal();
+		
+		return ResponseEntity.ok(user);
 	}
 	
 	@ExceptionHandler(Exception.class)
@@ -56,8 +55,4 @@ public class AuthController {
 		String message = e.getMessage().replaceAll("\r\n", "");
 		return ResponseEntity.badRequest().body(message);
 	}
-
 }
-
-
-
