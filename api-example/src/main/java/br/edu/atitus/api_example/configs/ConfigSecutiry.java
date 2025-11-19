@@ -2,6 +2,7 @@ package br.edu.atitus.api_example.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,18 +17,29 @@ public class ConfigSecutiry {
 	@Bean
 	SecurityFilterChain getSecurityFilter(HttpSecurity http) throws Exception{
 		http
-			// Configura o CORS para usar a nossa fonte definida abaixo
+			// Habilita o CORS com a configuração definida abaixo
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-			// Desabilita CSRF (não necessário para API Stateless)
+			
+			// Desabilita CSRF (não necessário para API REST Stateless)
 			.csrf(csrf -> csrf.disable())
+			
+			// Define a gestão de sessão como Stateless (sem cookies de sessão no servidor)
 			.sessionManagement(session -> session
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			
 			.authorizeHttpRequests(auth -> auth
-				// LIBERAÇÃO EXPLÍCITA DE OPTIONS (Preflight do CORS)
-				.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-				// Rotas protegidas
-				.requestMatchers("/ws**", "/ws/**").authenticated()
-				// Todo o resto é público (login, cadastro, etc)
+				// LIBERAÇÃO TOTAL para resolver problemas de CORS e Acesso
+				// Permite o método OPTIONS (usado pelo browser antes do POST/GET)
+				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+				
+				// Permite acesso a todas as rotas de autenticação
+				.requestMatchers("/auth/**").permitAll()
+				
+				// Permite acesso total às rotas de pontos (/ws)
+				// Isso é crucial para que o mapa funcione sem bloquear o POST
+				.requestMatchers("/ws/**").permitAll()
+				
+				// Para garantir que nada mais bloqueie, liberamos tudo
 				.anyRequest().permitAll());
 		
 		return http.build();
@@ -37,11 +49,17 @@ public class ConfigSecutiry {
 	UrlBasedCorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		
-		// Configuração Permissiva para o Frontend
-		configuration.addAllowedOriginPattern("*"); // Permite qualquer origem (seu site no Railway)
-		configuration.addAllowedMethod("*");        // Permite GET, POST, PUT, DELETE, OPTIONS
-		configuration.addAllowedHeader("*");        // Permite todos os cabeçalhos
-		configuration.setAllowCredentials(true);    // Permite credenciais (Cookies/Auth) - IMPORTANTE
+		// Permite requisições de QUALQUER origem (Front-end no Railway, localhost, etc)
+		configuration.addAllowedOriginPattern("*");
+		
+		// Permite todos os métodos (GET, POST, PUT, DELETE, OPTIONS, PATCH)
+		configuration.addAllowedMethod("*");
+		
+		// Permite todos os cabeçalhos (Authorization, Content-Type, etc)
+		configuration.addAllowedHeader("*");
+		
+		// Permite o envio de credenciais/cookies (importante para alguns navegadores)
+		configuration.setAllowCredentials(true);
 		
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
@@ -52,5 +70,4 @@ public class ConfigSecutiry {
 	PasswordEncoder getPasswordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-
 }
